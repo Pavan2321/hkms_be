@@ -1,17 +1,15 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const ResUtil = require('../utils/res');
 
 exports.register = async (req, res) => {
   const { email, password, role } = req.body;
 
   try {
-    const user = await User.create({ email, password, role });
-    res.status(201).json({
-      success: true,
-      message: "user created successfully",
-    });
+    await User.create({ email, password, role });
+    return ResUtil.SUCCESS(req, res, { }, "SUCCESS")
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    return ResUtil.VALIDATION_ERROR(req, res, { error: err.message }, "ERROR")
   }
 };
 
@@ -21,15 +19,14 @@ exports.login = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password))) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return ResUtil.VALIDATION_ERROR(req,res,{ error: 'Invalid credentials' }, "ERROR");
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
-
-    res.status(200).json({ success: true, token });
+    return ResUtil.SUCCESS(req, res, { token }, "SUCCESS")
   } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
+    return ResUtil.VALIDATION_ERROR(req, res, { error: err.message }, "ERROR")
   }
 };

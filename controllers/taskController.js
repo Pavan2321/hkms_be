@@ -1,13 +1,18 @@
 const Task = require('../models/Task');
+const ResUtil = require('../utils/res');
 
 // Create a new task
 exports.createTask = async (req, res) => {
   try {
+    if (!req.body.title) {
+      return ResUtil.VALIDATION_ERROR(req, res, { message: 'title is requried' }, 'VALIDATION_ERROR')
+    }
     const newTask = new Task(req.body);
     const task = await newTask.save();
     res.status(201).json(task);
+    ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR_ON_CREATE_TASK")
   }
 };
 
@@ -15,9 +20,9 @@ exports.createTask = async (req, res) => {
 exports.getTasks = async (req, res) => {
   try {
     const tasks = await Task.find();
-    res.status(200).json(tasks);
+    ResUtil.SUCCESS(req, res, { tasks }, "SUCCESS")
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
   }
 };
 
@@ -26,11 +31,11 @@ exports.getTaskById = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
+      return ResUtil.VALIDATION_ERROR(req, res, { message: 'Task not found' }, 'ERROR')
     }
-    res.status(200).json(task);
+    ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
   }
 };
 
@@ -39,11 +44,11 @@ exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
+      return ResUtil.VALIDATION_ERROR(req, res, { message: 'Task not found' }, 'ERROR')
     }
-    res.status(200).json(task);
+    ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
   }
 };
 
@@ -52,10 +57,10 @@ exports.deleteTask = async (req, res) => {
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
     if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
+      return ResUtil.VALIDATION_ERROR(req, res, { message: 'Task not found' }, 'ERROR')
     }
-    res.status(200).json({ message: 'Task deleted' });
+    ResUtil.SUCCESS(req, res, {}, "SUCCESS")
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
   }
 };
