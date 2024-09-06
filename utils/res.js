@@ -33,6 +33,15 @@ const ResUtil = {
         resObject.error_status = true;
         resObject.status_code = 401;
         res.status(401).json(resObject)
+    },
+    NOT_FOUND: async (req, res, body, message) => {
+        let resObject = resetRes();
+        delete resObject.success;
+        resObject.error.message = message;
+        resObject.error.body = body;
+        resObject.error_status = true;
+        resObject.status_code = 404;
+        res.status(404).json(resObject)
     }
 }
 

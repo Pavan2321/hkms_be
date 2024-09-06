@@ -31,7 +31,7 @@ exports.getTaskById = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) {
-      return ResUtil.VALIDATION_ERROR(req, res, { message: 'Task not found' }, 'ERROR')
+      return ResUtil.NOT_FOUND(req, res, { message: 'Task not found' }, 'ERROR')
     }
     ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
@@ -44,7 +44,7 @@ exports.updateTask = async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!task) {
-      return ResUtil.VALIDATION_ERROR(req, res, { message: 'Task not found' }, 'ERROR')
+      return ResUtil.NOT_FOUND(req, res, { message: 'Task not found' }, 'ERROR')
     }
     ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
