@@ -23,8 +23,8 @@ function validateToken(token) {
         const user = decoded;
         if (
             user.role === "admin"
-                ? checkTSForClientKeyBasedAuth(user.iat)
-                : checkTS(user.iat)
+                ? checkTSForUserKeyBasedAuth(user.iat)
+                : checkAdminTS(user.iat)
         ) {
             return user;
         } else {
@@ -35,7 +35,7 @@ function validateToken(token) {
     }
 }
 // token will expire after 7 days
-function checkTS(iat) {
+function checkAdminTS(iat) {
     const momIAT = moment(iat * 1000);
     const ts = moment(new Date().getTime());
     if (ts.diff(momIAT, "day") > 7) {
@@ -45,7 +45,8 @@ function checkTS(iat) {
     }
 }
 
-function checkTSForClientKeyBasedAuth(iat) {
+
+function checkTSForUserKeyBasedAuth(iat) {
     const momIAT = moment(iat * 1000);
     const ts = moment(new Date().getTime());
     if (ts.diff(momIAT, "minutes") > 30) {
