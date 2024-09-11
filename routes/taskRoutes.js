@@ -4,7 +4,7 @@ const router = express.Router();
 const { AuthUtil } = require('../utils/auth');
 
 router.post('/', createTask);
-router.get('/', AuthUtil.authenticate, getTasks);
+router.get('/', getTasks);
 router.get('/:id', getTaskById);
 router.put('/:id', updateTask);
 router.delete('/:id', deleteTask);
