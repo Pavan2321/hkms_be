@@ -66,3 +66,29 @@ exports.reset_password = async (req, res) => {
     return ResUtil.SERVER_ERROR(req, res, null, "Server_Error");
   }
 };
+
+exports.forget_password = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email: email });
+    if (user) {
+      const templateData = {
+        email: email,
+        url: `${process.env.WEB_BASE_URL}auth/reset-password?token=${encrypt(`${user._id}|${new Date().getTime()}`)}`
+      }
+      sendMail(
+        {
+          to: email,
+          from: 'shivamkuyadav320@gmail.com',
+          subject: "Reset password",
+        },
+        templateData,
+      );
+      return ResUtil.SUCCESS(req, res, {}, "SUCCESS");
+    } else {
+      return ResUtil.NOT_FOUND(req, res, {}, "User not found!!!");
+    }
+  } catch (err) {
+    return ResUtil.VALIDATION_ERROR(req, res, { error: err.message }, "ERROR")
+  }
+};
