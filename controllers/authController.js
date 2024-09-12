@@ -9,7 +9,7 @@ exports.register = async (req, res) => {
   const { email, password, role } = req.body;
 
   try {
-    const user = await User.create({ email, password, role });
+    const user = await User.create(req.body);
     if (user) {
       const templateData = {
         email: email,
