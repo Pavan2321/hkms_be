@@ -9,7 +9,6 @@ exports.createTask = async (req, res) => {
     }
     const newTask = new Task(req.body);
     const task = await newTask.save();
-    res.status(201).json(task);
     ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
     ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR_ON_CREATE_TASK")

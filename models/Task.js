@@ -13,8 +13,16 @@ const TaskSchema = new mongoose.Schema({
     enum: ['pending', 'in-progress', 'completed'],
     default: 'pending',
   },
-  timeline: {
+  date: {
     type: Date,
+  },
+  start_time: {
+    type: String,
+    default: null
+  },
+  end_time: {
+    type: String,
+    default: null
   },
   assigned_by: {
     type: String,
@@ -36,8 +44,8 @@ const TaskSchema = new mongoose.Schema({
     type: String,
   },
   priority: {
-    type: Boolean,
-    default: false,
+    type: String,
+    default: null,
   }
 }, {
   timestamps: true
