@@ -22,7 +22,7 @@ exports.getFacilities = async (req, res) => {
 
 exports.getFacilityById = async (req, res) => {
     try {
-        const facility = await Facility.findById(req.params.id);
+        const facility = await Facility.findOne({ id: req.params.id });
         if (!facility) {
             ResUtil.NOT_FOUND(req, res, { message: "Facility not found" }, 'ERROR');
         }
@@ -34,7 +34,7 @@ exports.getFacilityById = async (req, res) => {
 
 exports.updateFacility = async (req, res) => {
     try {
-        const facilityData = await Facility.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const facilityData = await Facility.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
         if (!facilityData) {
             ResUtil.NOT_FOUND(res, req, { message: "Facility not found" }, 'ERROR');
         };
@@ -46,7 +46,7 @@ exports.updateFacility = async (req, res) => {
 
 exports.deleteFacility = async (req, res) => {
     try {
-        const data = await Facility.findByIdAndDelete(req.params.id);
+        const data = await Facility.findOneAndDelete({ id: req.params.id });
         if (!data) {
             ResUtil.VALIDATION_ERROR(res, req, { message: "Facility not found" }, 'ERROR');
         }
