@@ -22,23 +22,37 @@ exports.getTasks = async (req, res) => {
       {
         $lookup: {
           from: "facilities",
-          localField: "facility_id", 
-          foreignField: "id", 
-          as: "facility" 
+          localField: "facility_id",
+          foreignField: "id",
+          as: "facility"
         }
-      }, 
+      },
       {
         $unwind: "$facility"
       },
       {
         $lookup: {
-          from: "services", 
-          localField: "service_id", 
-          foreignField: "id", 
-          as: "service" 
+          from: "services",
+          localField: "service_id",
+          foreignField: "id",
+          as: "service"
         }
-      }, {
-        $unwind: "$service" 
+      },
+      {
+        $unwind: "$service"
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: { assignedTo: { $toObjectId: "$assigned_to" } }, // Convert assigned_to to ObjectId
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$assignedTo"] } } }
+          ],
+          as: "user"
+        }
+      },
+      {
+        $unwind: "$user"
       },
 
     ]);
