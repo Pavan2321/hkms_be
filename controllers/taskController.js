@@ -18,7 +18,33 @@ exports.createTask = async (req, res) => {
 // Get all tasks
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find();
+    const tasks = await Task.aggregate([
+      {
+        $lookup: {
+          from: "facilities",
+          localField: "facility_id", 
+          foreignField: "id", 
+          as: "facility" 
+        }
+      }, 
+      {
+        $unwind: "$facility"
+      },
+      {
+        $lookup: {
+          from: "services", 
+          localField: "service_id", 
+          foreignField: "id", 
+          as: "service" 
+        }
+      }, {
+        $unwind: "$service" 
+      },
+
+    ]);
+    if (!tasks) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
+    }
     ResUtil.SUCCESS(req, res, { tasks }, "SUCCESS")
   } catch (error) {
     ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")

@@ -33,14 +33,14 @@ const TaskSchema = new mongoose.Schema({
   duration: {
     type: Number,
   },
-  facility: {
+  facility_id: {
     type: String,
   },
   repeated_task: {
     type: String,
     enum: ['daily', 'monthly', 'year'],
   },
-  task_type: {
+  service_id: {
     type: String,
   },
   priority: {
