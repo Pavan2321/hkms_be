@@ -1,5 +1,7 @@
 const Task = require('../models/Task');
 const ResUtil = require('../utils/res');
+const moment = require('moment');
+const User = require('../models/User');
 
 // Create a new task
 exports.createTask = async (req, res) => {
@@ -28,7 +30,10 @@ exports.getTasks = async (req, res) => {
         }
       },
       {
-        $unwind: "$facility"
+        $unwind: {
+          path: "$facility",
+          preserveNullAndEmptyArrays: true // Keep tasks without a facility
+        }
       },
       {
         $lookup: {
@@ -39,22 +44,25 @@ exports.getTasks = async (req, res) => {
         }
       },
       {
-        $unwind: "$service"
+        $unwind: {
+          path: "$service",
+          preserveNullAndEmptyArrays: true // Keep tasks without a service
+        }
       },
       {
         $lookup: {
           from: "users",
-          let: { assignedTo: { $toObjectId: "$assigned_to" } }, // Convert assigned_to to ObjectId
-          pipeline: [
-            { $match: { $expr: { $eq: ["$_id", "$$assignedTo"] } } }
-          ],
+          localField: "assigned_to",
+          foreignField: "user_id",
           as: "user"
         }
       },
       {
-        $unwind: "$user"
+        $unwind: {
+          path: "$user",
+          preserveNullAndEmptyArrays: true // Keep tasks without a user
+        }
       },
-
     ]);
     if (!tasks) {
       return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
@@ -101,5 +109,79 @@ exports.deleteTask = async (req, res) => {
     ResUtil.SUCCESS(req, res, {}, "SUCCESS")
   } catch (error) {
     ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+};
+
+exports.getAvailableUsers = async (req, res) => {
+  try {
+    // Get the current date
+    const today = moment().startOf('day').toDate();    // Midnight today
+    const tomorrow = moment().add(1, 'days').startOf('day').toDate();  // Midnight tomorrow
+
+    // Fetch all tasks created today (assigned today)
+    const tasks = await Task.find({
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+
+    // Group tasks by userId (assigned_to)
+    const tasksByUser = tasks.reduce((acc, task) => {
+      if (!acc[task.assigned_to]) acc[task.assigned_to] = [];
+      acc[task.assigned_to].push(task);
+      return acc;
+    }, {});
+
+    const availableTimes = [];
+
+    for (const userId of Object.keys(tasksByUser)) {
+      // Fetch user details based on userId (assigned_to)
+      const user = await User.findOne({ user_id: userId });
+
+      if (user) {
+        // Sort tasks by start time
+        const userTasks = tasksByUser[userId].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+        const workingStartTime = moment().set({ hour: 9, minute: 0 });  // Start of workday (9 AM)
+        const workingEndTime = moment().set({ hour: 18, minute: 0 });   // End of workday (6 PM)
+
+        let availableSlots = [];
+        let lastEndTime = workingStartTime;
+
+        // Calculate available time between tasks
+        userTasks.forEach(task => {
+          const taskStart = moment(task.start_time);  // Task start time
+          const taskEnd = moment(task.end_time);      // Task end time
+
+          // Check if there's a gap between the last task and the current task
+          if (taskStart.isAfter(lastEndTime)) {
+            availableSlots.push({
+              start: lastEndTime.format('HH:mm'),
+              end: taskStart.format('HH:mm')
+            });
+          }
+
+          lastEndTime = taskEnd;  // Update the last end time to the current task's end time
+        });
+
+        // If the last task ends before the workday ends, add the remaining time as available
+        if (lastEndTime.isBefore(workingEndTime)) {
+          availableSlots.push({
+            start: lastEndTime.format('HH:mm'),
+            end: workingEndTime.format('HH:mm')
+          });
+        }
+
+        // Save the available slots for this user
+        availableTimes.push( {
+          name: `${user.first_name} ${user.last_name}`,
+          availableSlots,
+          user_id: userId
+        });
+      }
+    }
+
+    res.json({ status: 'success', data: availableTimes });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
