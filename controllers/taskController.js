@@ -130,53 +130,62 @@ exports.getAvailableUsers = async (req, res) => {
       return acc;
     }, {});
 
+    // Fetch all users
+    const users = await User.find();
+
     const availableTimes = [];
 
-    for (const userId of Object.keys(tasksByUser)) {
-      // Fetch user details based on userId (assigned_to)
-      const user = await User.findOne({ user_id: userId });
+    for (const user of users) {
+      const userId = user.user_id;
+      const userTasks = tasksByUser[userId] || []; // Get user's tasks or empty array if no tasks
 
-      if (user) {
-        // Sort tasks by start time
-        const userTasks = tasksByUser[userId].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+      // Sort tasks by start time
+      userTasks.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
-        const workingStartTime = moment().set({ hour: 9, minute: 0 });  // Start of workday (9 AM)
-        const workingEndTime = moment().set({ hour: 18, minute: 0 });   // End of workday (6 PM)
+      const workingStartTime = moment().set({ hour: 9, minute: 0 });  // Start of workday (9 AM)
+      const workingEndTime = moment().set({ hour: 18, minute: 0 });   // End of workday (6 PM)
 
-        let availableSlots = [];
-        let lastEndTime = workingStartTime;
+      let availableSlots = [];
+      let lastEndTime = workingStartTime;
 
-        // Calculate available time between tasks
-        userTasks.forEach(task => {
-          const taskStart = moment(task.start_time);  // Task start time
-          const taskEnd = moment(task.end_time);      // Task end time
+      // Calculate available time between tasks
+      userTasks.forEach(task => {
+        const taskStart = moment(task.start_time);  // Task start time
+        const taskEnd = moment(task.end_time);      // Task end time
 
-          // Check if there's a gap between the last task and the current task
-          if (taskStart.isAfter(lastEndTime)) {
-            availableSlots.push({
-              start: lastEndTime.format('HH:mm'),
-              end: taskStart.format('HH:mm')
-            });
-          }
-
-          lastEndTime = taskEnd;  // Update the last end time to the current task's end time
-        });
-
-        // If the last task ends before the workday ends, add the remaining time as available
-        if (lastEndTime.isBefore(workingEndTime)) {
+        // Check if there's a gap between the last task and the current task
+        if (taskStart.isAfter(lastEndTime)) {
           availableSlots.push({
             start: lastEndTime.format('HH:mm'),
-            end: workingEndTime.format('HH:mm')
+            end: taskStart.format('HH:mm')
           });
         }
 
-        // Save the available slots for this user
-        availableTimes.push( {
-          name: `${user.first_name} ${user.last_name}`,
-          availableSlots,
-          user_id: userId
+        lastEndTime = taskEnd;  // Update the last end time to the current task's end time
+      });
+
+      // If the last task ends before the workday ends, add the remaining time as available
+      if (lastEndTime.isBefore(workingEndTime)) {
+        availableSlots.push({
+          start: lastEndTime.format('HH:mm'),
+          end: workingEndTime.format('HH:mm')
         });
       }
+
+      // If no tasks, the user is available the whole day
+      if (userTasks.length === 0) {
+        availableSlots.push({
+          start: workingStartTime.format('HH:mm'),
+          end: workingEndTime.format('HH:mm')
+        });
+      }
+
+      // Save the available slots for this user
+      availableTimes.push({
+        name: `${user.first_name} ${user.last_name}`,
+        availableSlots,
+        user_id: userId
+      });
     }
 
     res.json({ status: 'success', data: availableTimes });
