@@ -46,6 +46,10 @@ const TaskSchema = new mongoose.Schema({
   priority: {
     type: String,
     default: null,
+  },
+  repeate_interval: {
+    type: Number,
+    default: null,
   }
 }, {
   timestamps: true
