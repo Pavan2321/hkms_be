@@ -3,7 +3,7 @@ const ResUtil = require('../utils/res');
 
 exports.getUsers = async (req, res) => {
     try {
-        const usersData = await User.find();
+        const usersData = await User.find({ role: { $ne: 'admin' }});
         ResUtil.SUCCESS(req, res, { usersData }, "SUCCESS");
     } catch (error) {
         ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR");
