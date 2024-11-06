@@ -38,11 +38,12 @@ exports.login = async (req, res) => {
     if (!user || !(await user.matchPassword(password))) {
       return ResUtil.VALIDATION_ERROR(req, res, { error: 'Invalid credentials' }, "ERROR");
     }
+    console.log(user)
 
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
-    return ResUtil.SUCCESS(req, res, { token }, "SUCCESS")
+    return ResUtil.SUCCESS(req, res, { token, ...user.toObject() }, "SUCCESS")
   } catch (err) {
     return ResUtil.VALIDATION_ERROR(req, res, { error: err.message }, "ERROR")
   }

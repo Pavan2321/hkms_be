@@ -2,6 +2,7 @@ const Task = require('../models/Task');
 const ResUtil = require('../utils/res');
 const moment = require('moment');
 const User = require('../models/User');
+const SubTask = require('../models/subTask');
 
 // Create a new task
 exports.createTask = async (req, res) => {
@@ -26,13 +27,7 @@ exports.getTasks = async (req, res) => {
           from: "facilities",
           localField: "facility_id",
           foreignField: "id",
-          as: "facility"
-        }
-      },
-      {
-        $unwind: {
-          path: "$facility",
-          preserveNullAndEmptyArrays: true // Keep tasks without a facility
+          as: "facilities"
         }
       },
       {
@@ -40,13 +35,7 @@ exports.getTasks = async (req, res) => {
           from: "services",
           localField: "service_id",
           foreignField: "id",
-          as: "service"
-        }
-      },
-      {
-        $unwind: {
-          path: "$service",
-          preserveNullAndEmptyArrays: true // Keep tasks without a service
+          as: "services"
         }
       },
       {
@@ -54,13 +43,7 @@ exports.getTasks = async (req, res) => {
           from: "users",
           localField: "assigned_to",
           foreignField: "user_id",
-          as: "user"
-        }
-      },
-      {
-        $unwind: {
-          path: "$user",
-          preserveNullAndEmptyArrays: true // Keep tasks without a user
+          as: "users"
         }
       },
     ]);
@@ -75,21 +58,52 @@ exports.getTasks = async (req, res) => {
 
 // Get a single task by ID
 exports.getTaskById = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-    if (!task) {
-      return ResUtil.NOT_FOUND(req, res, { message: 'Task not found' }, 'ERROR')
+  const taskId = req.params.id;
+    try {
+      const tasks = await Task.aggregate([
+        {
+          $match: {
+            id: taskId
+          }
+        },
+        {
+          $lookup: {
+            from: "facilities",
+            localField: "facility_id",
+            foreignField: "id",
+            as: "facilities"
+          }
+        },
+        {
+          $lookup: {
+            from: "services",
+            localField: "service_id",
+            foreignField: "id",
+            as: "services"
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "assigned_to",
+            foreignField: "user_id",
+            as: "users"
+          }
+        },
+      ]);
+      if (!tasks) {
+        return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
+      }
+      ResUtil.SUCCESS(req, res, { tasks }, "SUCCESS")
+    } catch (error) {
+      ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
     }
-    ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
-  } catch (error) {
-    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
-  }
 };
 
 // Update a task
 exports.updateTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const task = await Task.findOneAndUpdate({id:req.params.id}, req.body, { new: true });
     if (!task) {
       return ResUtil.NOT_FOUND(req, res, { message: 'Task not found' }, 'ERROR')
     }
@@ -102,7 +116,7 @@ exports.updateTask = async (req, res) => {
 // Delete a task
 exports.deleteTask = async (req, res) => {
   try {
-    const task = await Task.findByIdAndDelete(req.params.id);
+    const task = await Task.findOneAndDelete({id:req.params.id});
     if (!task) {
       return ResUtil.VALIDATION_ERROR(req, res, { message: 'Task not found' }, 'ERROR')
     }
@@ -194,3 +208,76 @@ exports.getAvailableUsers = async (req, res) => {
     res.status(500).json({ status: 'error', message: 'Internal Server Error' });
   }
 };
+
+exports.getSubTask = async(req, res) => {
+  try {
+    const subTasks = await SubTask.find();
+    if (!subTasks) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'No subtasks found' }, 'ERROR')
+    }
+    ResUtil.SUCCESS(req, res, { subTasks }, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+}
+
+exports.createSubTask = async (req, res) => {
+  try {
+    if (!req.body.name && !req.body.task_id) {
+      return ResUtil.VALIDATION_ERROR(req, res, { message: 'name and task id is required' }, 'VALIDATION_ERROR')
+    }
+    const newSubTask = new SubTask(req.body);
+    const subTask = await newSubTask.save();
+    ResUtil.SUCCESS(req, res, { subTask }, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR_ON_CREATE_SUBTASK")
+  }
+}
+
+exports.getSubTaskById = async (req, res) =>{
+  try {
+    const subTask = await SubTask.findOne({id:req.params.id});
+    if (!subTask) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'Subtask not found' }, 'ERROR')
+    }
+    ResUtil.SUCCESS(req, res, { subTask }, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+}
+
+exports.getSubTaskByTaskId = async(req, res) => {
+  try {
+    const subTasks = await SubTask.find({task_id: req.params.task_id});
+    if (!subTasks) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'No subtasks found for this task' }, 'ERROR')
+    }
+    ResUtil.SUCCESS(req, res, { subTasks }, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+}
+
+exports.updateSubTask = async (req, res) => {
+  try {
+    const updatedSubTask = await SubTask.findOneAndDelete({id:req.params.id}, req.body, {new: true});
+    if (!updatedSubTask) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'Subtask not found' }, 'ERROR')
+    }
+    ResUtil.SUCCESS(req, res, { updatedSubTask }, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+}
+
+exports.deleteSubTask = async (req, res) => {
+  try {
+    const deletedSubTask = await SubTask.findOneAndDelete({ id: req.params.id });
+    if (!deletedSubTask) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'Subtask not found' }, 'ERROR')
+    }
+    ResUtil.SUCCESS(req, res, {}, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+}

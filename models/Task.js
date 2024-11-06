@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const TaskSchema = new mongoose.Schema({
+  id:{
+    type: String,
+    required: true,
+  },
   title: {
     type: String,
     required: true,
@@ -10,7 +14,7 @@ const TaskSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'in-progress', 'completed'],
+    enum: ['pending', 'in_progress', 'completed'],
     default: 'pending',
   },
   date: {
@@ -28,20 +32,19 @@ const TaskSchema = new mongoose.Schema({
     type: String,
   },
   assigned_to: {
-    type: String,
+    type: [String],
+    required: false
   },
   duration: {
     type: Number,
   },
   facility_id: {
-    type: String,
-  },
-  repeated_task: {
-    type: String,
-    enum: ['daily', 'monthly', 'year'],
+    type: [String],
+    required: false
   },
   service_id: {
-    type: String,
+    type: [String],
+    required: false
   },
   priority: {
     type: String,

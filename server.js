@@ -8,7 +8,7 @@ const loggerRoutes = require('./routes/loggerRoutes');
 const userRoutes = require("./routes/userRoutes");
 const facilityRoutes = require("./routes/facilityRoutes");
 const serviceRoutes = require("./routes/servicesRoutes");
-require("./helpers/cron")
+// require("./helpers/cron")
 
 dotenv.config();
 connectDB();
