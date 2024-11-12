@@ -8,7 +8,7 @@ router.get('/', getTasks);
 router.get('/:id', getTaskById);
 router.get('/sub_task', getSubTask);
 router.get('/sub_task/:id', getSubTaskById);
-router.get('sub_task/taskId/:task_id', getSubTaskByTaskId);
+router.get('/sub_task/taskId/:task_id', getSubTaskByTaskId);
 router.post('/available-users', getAvailableUsers);
 router.post('/sub_task', createSubTask);
 router.put('/:id', updateTask);

@@ -211,9 +211,34 @@ exports.getAvailableUsers = async (req, res) => {
 
 exports.getSubTask = async(req, res) => {
   try {
-    const subTasks = await SubTask.find();
+    const subTasks = await SubTask.aggregate([
+      {
+        $lookup: {
+          from: "facilities",
+          localField: "facility_id",
+          foreignField: "id",
+          as: "facilities"
+        }
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "service_id",
+          foreignField: "id",
+          as: "services"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assigned_to",
+          foreignField: "user_id",
+          as: "users"
+        }
+      },
+    ]);
     if (!subTasks) {
-      return ResUtil.NOT_FOUND(req, res, { message: 'No subtasks found' }, 'ERROR')
+      return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
     }
     ResUtil.SUCCESS(req, res, { subTasks }, "SUCCESS")
   } catch (error) {
@@ -223,8 +248,8 @@ exports.getSubTask = async(req, res) => {
 
 exports.createSubTask = async (req, res) => {
   try {
-    if (!req.body.name && !req.body.task_id) {
-      return ResUtil.VALIDATION_ERROR(req, res, { message: 'name and task id is required' }, 'VALIDATION_ERROR')
+    if (!req.body.title && !req.body.task_id) {
+      return ResUtil.VALIDATION_ERROR(req, res, { message: 'title and task id is required' }, 'VALIDATION_ERROR')
     }
     const newSubTask = new SubTask(req.body);
     const subTask = await newSubTask.save();
@@ -236,9 +261,39 @@ exports.createSubTask = async (req, res) => {
 
 exports.getSubTaskById = async (req, res) =>{
   try {
-    const subTask = await SubTask.findOne({id:req.params.id});
-    if (!subTask) {
-      return ResUtil.NOT_FOUND(req, res, { message: 'Subtask not found' }, 'ERROR')
+    const subTasks = await SubTask.aggregate([
+      {
+        $match:{
+          id: req.params.id
+        }
+      },
+      {
+        $lookup: {
+          from: "facilities",
+          localField: "facility_id",
+          foreignField: "id",
+          as: "facilities"
+        }
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "service_id",
+          foreignField: "id",
+          as: "services"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assigned_to",
+          foreignField: "user_id",
+          as: "users"
+        }
+      },
+    ]);
+    if (!subTasks) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
     }
     ResUtil.SUCCESS(req, res, { subTask }, "SUCCESS")
   } catch (error) {
@@ -248,9 +303,39 @@ exports.getSubTaskById = async (req, res) =>{
 
 exports.getSubTaskByTaskId = async(req, res) => {
   try {
-    const subTasks = await SubTask.find({task_id: req.params.task_id});
+    const subTasks = await SubTask.aggregate([
+      {
+        $match:{
+          task_id: req.params.task_id
+        }
+      },
+      {
+        $lookup: {
+          from: "facilities",
+          localField: "facility_id",
+          foreignField: "id",
+          as: "facilities"
+        }
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "service_id",
+          foreignField: "id",
+          as: "services"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assigned_to",
+          foreignField: "user_id",
+          as: "users"
+        }
+      },
+    ]);
     if (!subTasks) {
-      return ResUtil.NOT_FOUND(req, res, { message: 'No subtasks found for this task' }, 'ERROR')
+      return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
     }
     ResUtil.SUCCESS(req, res, { subTasks }, "SUCCESS")
   } catch (error) {

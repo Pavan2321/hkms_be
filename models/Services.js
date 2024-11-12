@@ -7,9 +7,9 @@ const ServicesSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        default: null
+        required: true
     },
-    details: {
+    description: {
         type: String,
         default: null
     }

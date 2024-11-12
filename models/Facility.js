@@ -6,10 +6,10 @@ const FacilitySchema = new mongoose.Schema({
         required: true
     },
     name: {
-        type: String,
-        default: null
+        type: String,    
+        required: true
     },
-    details: {
+    description: {
         type: String,
         default: null
     }
