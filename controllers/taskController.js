@@ -3,6 +3,7 @@ const ResUtil = require('../utils/res');
 const moment = require('moment');
 const User = require('../models/User');
 const SubTask = require('../models/subTask');
+const sendMail = require('../utils/email/send_mail');
 
 // Create a new task
 exports.createTask = async (req, res) => {
@@ -101,11 +102,47 @@ exports.getTaskById = async (req, res) => {
 };
 
 // Update a task
-exports.updateTask = async (req, res) => {
+exports.updateTask = async (req, res, io) => {
   try {
     const task = await Task.findOneAndUpdate({id:req.params.id}, req.body, { new: true });
     if (!task) {
       return ResUtil.NOT_FOUND(req, res, { message: 'Task not found' }, 'ERROR')
+    }
+
+     // Check if the status is being updated
+     if (req.body.status && req.body.status == task.status) {
+      // Fetch all admin users
+      const admins = await User.find({ role: 'admin' }); // Adjust the schema fields as necessary
+
+      if (admins.length > 0) {
+        const adminEmails = admins.map((admin) => admin.email);
+
+        // Construct template data
+        const templateData = {
+          taskName: task.title,
+          status: req.body.status,
+          userName: 'Admin' // General name for multiple recipients
+        };
+
+        // Send the email to all admins
+        sendMail(
+          {
+          to: adminEmails, // Array of admin emails
+          from: 'shivamkuyadav320@gmail.com',
+          subject: `Task Status Updated: ${task.title}`,
+          templateName: 'taskStatusChange'
+        },
+        templateData);
+      }
+       // Emit a notification to all connected clients
+       io.emit('taskStatusChange', {
+        id: task.id,
+        title: task.title,
+        status: req.body.status,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log('Notification sent via Socket.IO');
     }
     ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
   } catch (error) {
@@ -156,8 +193,8 @@ exports.getAvailableUsers = async (req, res) => {
       // Sort tasks by start time
       userTasks.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
-      const workingStartTime = moment().set({ hour: 9, minute: 0 });  // Start of workday (9 AM)
-      const workingEndTime = moment().set({ hour: 18, minute: 0 });   // End of workday (6 PM)
+      const workingStartTime = moment().startOf('day');  // Start of day (00:00)
+      const workingEndTime = moment().endOf('day');     // End of day (23:59)
 
       let availableSlots = [];
       let lastEndTime = workingStartTime;
@@ -345,7 +382,7 @@ exports.getSubTaskByTaskId = async(req, res) => {
 
 exports.updateSubTask = async (req, res) => {
   try {
-    const updatedSubTask = await SubTask.findOneAndDelete({id:req.params.id}, req.body, {new: true});
+    const updatedSubTask = await SubTask.findOneAndUpdate({id:req.params.id}, req.body, {new: true});
     if (!updatedSubTask) {
       return ResUtil.NOT_FOUND(req, res, { message: 'Subtask not found' }, 'ERROR')
     }

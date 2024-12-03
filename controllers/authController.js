@@ -20,6 +20,7 @@ exports.register = async (req, res) => {
           to: email,
           from: 'shivamkuyadav320@gmail.com',
           subject: "Reset password",
+          templateName: "resetPassword"
         },
         templateData,
       );

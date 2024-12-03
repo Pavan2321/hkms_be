@@ -1,8 +1,9 @@
 
 const nodemailer = require('nodemailer');
 const resetPasswordTemplate = require('./reset_password');
+const taskStatusChangeTemplate = require('./task_status_change')
 
-const sendMail = ({ to, from, subject }, data) => {
+const sendMail = ({ to, from, subject, templateName }, data) => {
 
     const transporter = nodemailer.createTransport({
         service: 'Gmail',
@@ -12,11 +13,28 @@ const sendMail = ({ to, from, subject }, data) => {
         }
     });
 
+      // Convert array of emails to comma-separated string
+      const recipients = Array.isArray(to) ? to.join(',') : to;
+
+    // Determine which template to use
+    let emailTemplate;
+    if (templateName === 'resetPassword') {
+        emailTemplate = resetPasswordTemplate({ url: data.url, email: to });
+    } else if (templateName === 'taskStatusChange') {
+        emailTemplate = taskStatusChangeTemplate({
+            taskName: data.taskName,
+            status: data.status,
+            userName: data.userName
+        });
+    } else {
+        throw new Error('Invalid template name provided.');
+    }
+
     const mailOptions = {
         from,
-        to,
+        to : recipients,
         subject,
-        html: resetPasswordTemplate({ url: data.url, email: to }),
+        html: emailTemplate,
         headers: {
             'Content-Type': 'text/html',
         }

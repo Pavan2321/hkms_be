@@ -11,7 +11,7 @@ router.get('/sub_task/:id', getSubTaskById);
 router.get('/sub_task/taskId/:task_id', getSubTaskByTaskId);
 router.post('/available-users', getAvailableUsers);
 router.post('/sub_task', createSubTask);
-router.put('/:id', updateTask);
+router.put('/:id', (req, res) => updateTask(req, res, req.io));
 router.put('/sub_task/:id', updateSubTask);
 router.delete('/:id', deleteTask);
 router.delete('/sub_task/:id', deleteSubTask);

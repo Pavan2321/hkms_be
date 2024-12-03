@@ -50,9 +50,16 @@ const TaskSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
-  repeate_interval: {
-    type: Number,
+  repeated_task: {
+    type: String,
+    enum: ['daily', 'weekly', 'monthly'],
     default: null,
+  },
+  repeated_start_date:{
+    type: Date,
+  },
+  repeated_end_date: {
+    type: Date,
   }
 }, {
   timestamps: true
