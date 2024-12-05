@@ -403,3 +403,46 @@ exports.deleteSubTask = async (req, res) => {
     ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
   }
 }
+
+exports.getTaskByUserId = async(req, res) => {
+  const userId = req.params.user_id
+  try {
+    const tasks = await Task.aggregate([
+      {
+        $match: {
+          assigned_to: { $in: [userId] }
+        }
+      },
+      {
+        $lookup: {
+          from: "facilities",
+          localField: "facility_id",
+          foreignField: "id",
+          as: "facilities"
+        }
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "service_id",
+          foreignField: "id",
+          as: "services"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "assigned_to",
+          foreignField: "user_id",
+          as: "users"
+        }
+      },
+    ]);
+    if (!tasks) {
+      return ResUtil.NOT_FOUND(req, res, { message: 'No tasks found' }, 'ERROR')
+    }
+    ResUtil.SUCCESS(req, res, { tasks }, "SUCCESS")
+  } catch (error) {
+    ResUtil.SERVER_ERROR(req, res, { message: error.message }, "ERROR")
+  }
+}
