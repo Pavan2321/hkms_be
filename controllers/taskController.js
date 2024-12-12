@@ -11,6 +11,10 @@ exports.createTask = async (req, res) => {
     if (!req.body.title) {
       return ResUtil.VALIDATION_ERROR(req, res, { message: 'title is requried' }, 'VALIDATION_ERROR')
     }
+    // Ensure repeated_task is valid or null
+    if (req.body.repeated_task === '') {
+      req.body.repeated_task = null;
+    }
     const newTask = new Task(req.body);
     const task = await newTask.save();
     ResUtil.SUCCESS(req, res, { task }, "SUCCESS")
