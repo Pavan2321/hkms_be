@@ -4,12 +4,20 @@
         {
             "src": "./server.js",
             "use": "@vercel/node"
+        },
+        {
+            "src": "package.json",
+            "use": "vercel-sapper"
         }
     ],
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/"
+            "dest": "server.js",
+            "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+            "headers": {
+                "Access-Control-Allow-Origin": "*"
+            }
         }
     ]
   }
